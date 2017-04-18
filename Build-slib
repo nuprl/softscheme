@@ -1,0 +1,8 @@
+;; Build file for SLIB.
+;; Use:   scheme Build-slib
+
+(require 'pretty-print)
+(load "flatten-file.ss")
+(delete-file "st.ss")
+(flatten-file "load-slib.scm" "st.scm")
+(exit)

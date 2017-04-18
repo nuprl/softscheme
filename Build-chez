@@ -1,0 +1,9 @@
+;; Build file for Chez Scheme.
+;; Use:   scheme Build-chez
+
+(case-sensitive #t)
+(load "flatten-file.ss")
+(delete-file "st.ss")
+(flatten-file "load-chez.ss" "st.ss")
+(compile-file "st.ss" "st.so")
+(exit)

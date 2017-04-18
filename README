@@ -1,0 +1,318 @@
+softscheme
+===
+
+Mirror of: http://www.cs.cmu.edu/Groups/AI/lang/scheme/code/ext/types/soft_scm/soft_scm.tgz
+
+All code is "as-is".
+
+
+Other links:
+
+- CMU index: http://www.cs.cmu.edu/Groups/AI/lang/scheme/code/ext/types/soft_scm/0.html
+- Andrew Wright's dissertation: http://www.ccis.northeastern.edu/racket/pubs/thesis-wright.ps.gz
+- 1-file version (benchmark for [Larceny](http://www.larcenists.org/)): https://github.com/skangas/guile/blob/master/gc-benchmarks/larceny/softscheme.sch
+
+
+Original README text below.
+
+- - -
+
+                             Soft Scheme
+                          Andrew K. Wright
+
+This software is Copyright (c) 1993,1994 by Andrew K. Wright.  It is
+*not* public domain.  You are free to use this software for
+educational and experimental purposes only.  You must return
+substantial modifications to the author.  No warranties or guarantees
+of any kind apply to this software.
+
+Please address correspondence to:  wright@cs.rice.edu.
+
+
+This software requires pattern matching extensions to Scheme available
+by anonymous FTP from titan.cs.rice.edu in public/wright/match.tar.Z.
+This software has been tested on Chez Scheme 4.1 and on SCM on a
+Sparc10.  It will probably port easily to other Schemes with SLIB.  It
+does require a fairly high performance Scheme system.  See the FAQ on
+comp.lang.scheme (posted weekly) for information on Chez, SCM, and
+SLIB.  If you do port Soft Scheme to other Scheme systems, please
+return any changes to me.
+
+
+
+1. Documentation
+
+This file briefly describes how to install and use the soft type
+checker.  See the pattern matching documentation for match and
+define-structure, but note the restrictions later in this file.  See
+the tech report accompanying this package for further information.  I
+apologize for the lack of better documentation.  This will be fixed
+eventually.
+
+
+
+2. Installation Instructions
+
+For Chez Scheme:
+
+  1.  Obtain the pattern matcher, unpack it, and compile it to "match.so".
+  2.  Change the installation options at the top of "load-chez.ss" to
+      reflect the ABSOLUTE pathnames of the appropriate files.  Set the
+      option to #f if that file is not to be loaded (eg. set match-file
+      #f if you have arranged for match to be loaded by some other method
+      like ".schemerc").
+  3.  Run "scheme Build-chez".  This will build a compiled image "st.so".
+  4.  Run "scheme st.so".  You're up and typing ...
+
+For SCM:
+
+  1.  Obtain the pattern matcher and unpack it.
+  2.  Change the installation options at the top of "load-slib.scm" to
+      reflect the ABSOLUTE pathnames of the appropriate files.  Set the
+      option to #f if that file is not to be loaded (eg. set match-file
+      #f if you have arranged for match to be loaded by some other method
+      like "ScmInit.scm").
+  3.  Run "scm Build-slib".  This will build a source image "st.scm".
+  4.  Run "scm -i -p1 st.scm".  You're up and typing ...
+      Note that SCM takes a while to compile this code (~75 seconds
+      to load, ~25 seconds for first use on a Sparc10).  
+
+
+
+3. Example
+
+Try (st: "example.ss").  Use (st:type) to see the types of the various
+definitions.  Try (load "example.ss") without soft type checking at
+(optimize-level 0) and (optimize-level 3) (in Chez) for comparison.
+
+
+
+4. Usage
+
+This soft type system defines several commands (listed below), as well
+as run-time checks for every R4RS primitive.  The run-time checks are
+prefixed with "CHECK-"; for example, the run-time check for map is
+CHECK-map.  There are also a few macros with a similar naming
+convention.
+
+The soft type checker has types for all R4RS primitives, plus a few
+extensions.  You will be warned about unknown references.  The type
+checker cannot guarantee the safety of programs referring to unknown
+routines.  There is a facility (define-primitive) to add other
+primitives (see "custom-chez.ss").
+
+This soft type checker is a batch system.  Given a Scheme program, it
+produces type information for that program and an annotated program
+with run-time checks inserted.  The command (st: file) type checks a
+file, writes an annotated version of the program with checks inserted
+to an output file, prints a summary of the inserted checks, and loads
+and executes the program if it has no unbound references.  A program
+consists of the usual Scheme definitions and expressions, and may be
+spread across several files.  See the "Restrictions on Source Programs"
+later in this file.
+
+
+                
+5. Commands
+
+  (st: file [output])
+    "file" is a file name
+    "output" if present is a file name
+
+Type checks the program, indicating global definitions that are not
+polymorphic. This command may also report warnings about unbound
+references. If "output" is present and not #f, an annotated version of
+the program is written to that file.  If "output" is missing, the
+annotated version is written to a file name constructed from the input
+file name with suffix ".soft".  (st:summary) is invoked to report the
+inserted checks.  Finally, if there were no unbound references, the
+output is loaded and executed at (optimize-level 3).
+
+  (st: '(file ...) output)
+
+Like above, but the input may be a list a file names.  An output
+file name is required.
+
+  (st: expression [output])
+    "expression" is any Scheme expression or definition
+
+Like above, but the input may be a quoted top-level Scheme expression.
+
+  (st:check input [output])
+
+Like st:, but does not execute the program.
+
+  (st:run file)
+    "file" is a file name
+
+Loads and executes a previously generated soft typed program.
+
+  (st:summary)
+
+Prints a summary of checking information for the current program.  For
+each global definition that requires at least one run-time check, the
+summary includes a line of the form:
+
+      (definition-name number-of-checks
+        (# match [# inexhaustive])
+        (# prim)
+        (# field)
+        (# lambda)
+        (# ap)
+        (# TYPE)
+        (# ERROR)
+
+There are six kinds of run-time checks: match checks, primitive
+checks, field checks, lambda checks, application checks, and TYPE
+checks.  "number-of-checks" is the sum of all four kinds of checks.
+The most common kind of check is a primitive check.  Match checks are
+further broken down into ordinary and inexhaustive.  A match is
+inexhaustive if the type system cannot precisely represent its
+possible input.  For example, the expression (match x [1 ...]) is
+inexhaustive because the type system must use the approximate type
+"number" for its input.  An ordinary match check indicates that the
+type of the input value is larger than the type assigned by the system
+to the match expression, even if this type is not precise.  Hence
+(match #t [1 ...]) gets an ordinary match check.  "field", "lambda",
+"ap", and "TYPE" indicate the breakdown of other checks.  A "TYPE"
+check is a static type check representing the failure of a static
+type annotation.
+
+Some checks are definite; if reached, such a check cannot succeed.
+(ERROR #) indicates the number of such checks, if any.  Following
+the summaries for individual definitions is a total line:
+
+   TOTAL CHECKS number-of-checks (of possible-checks is P %) 
+                                 [(ERROR #)] [(TYPE #)]
+
+This line reports the total number of run-time checks required for
+the entire program, the potential number of checks (how many a
+naive Scheme compiler inserts), the percentage P of sites that
+require run-time checks, the total number of definite checks if any,
+and the total number of static type checks if any.
+
+  (st:type definition ...)
+    definition ... is one or more global definitions of the current
+    program (symbols).
+
+Prints the types of each definition.
+
+  (st:type)
+
+Prints the types of every global definition in the current program.
+This command can also be used to inspect the types of primitives, eg.
+(st:type 'force).
+
+  (st:type N ...)
+    "N" is a CHECK or CLASH number
+
+Prints the types of each CHECK or CLASH.  See (st:cause).
+
+  (st:ltype definition ...)
+    definition ... is one or more global definitions of the current
+    program (symbols).
+
+Prints the types of all local definitions within each global
+definition.
+
+  (st:ltype)
+
+Prints the types of every local definition in the entire program.
+
+  (st:cause)
+
+Prints cause information for CHECKs.  This command is intended to help
+locate why a run-time CHECK is inserted.  For each inserted CHECK,
+(st:cause) prints a list of cause items.  There are two kinds of
+cause items:
+ 1.  A cause item may be a set of identifiers, like (even? odd?).
+ This item indicates that even? and odd? are mutually recursive and
+ are type checked (generalized) together.  Independent of their uses,
+ the definitions of these procedures force the check.  Command (st:type N)
+ where N is the CHECK identifier number will print the type of the
+ checked primitive.  This type is determined only from the definitions
+ of even? and odd?, and will include some elements that the unchecked
+ primitive does not accept.
+ 2.  A cause item may be a CLASH number.  A CLASH is a use of a polymorphic
+ non-primitive procedure that forces a CHECK to be inserted.  Again,
+ (st:type N) where N is the clash number will display the type of the
+ clash.
+If a check has several causes, each of these causes may need to be
+repaired to eliminate the check.  To better understand (st:cause),
+try it with the example referred to at end of this document.
+
+  (st:typemode)
+
+Toggles the type display mode between Pretty [the default] and Raw.
+
+  (st:verbose)
+
+Toggles verbosity on/off.  Verbose mode prints definition names as
+they are type checked.
+
+  (st:help)
+
+Prints a brief summary of the commands.
+
+
+
+6. The Annotated Program
+
+The annotated program includes run-time checks to guarantee safe
+program execution.  This annotated program can be run at
+(optimize-level 3) with no possibility of a memory violation
+if there were no unbound references.
+
+Every run-time check has a unique identification number.  This number
+is reported in the error message when a run-time check fails.  By
+searching for this number in the annotated program, it is easy to
+determine exactly which run-time check failed.
+
+The six kinds of run-time checks are:
+
+    (CHECK-match (# [INEXHAUST]) exp clauses ...)
+    (CHECK-primitive # [ERROR])        ; where primitive is +, -, car, ...
+    (CHECK-ap (# [ERROR]) fun args ...)
+    (CHECK-lambda (# [ERROR]) names body ...)
+    (CHECK-field (#) name exp)
+    (CHECK-: (#) type exp)
+
+In each case, # is the identification number of the check.  A
+primitive check like CHECK-car is inserted if the arguments of the
+primitive may not be the right type, or if the wrong number of
+arguments is present.  CHECK-match is inserted for a match check.
+CHECK-ap is inserted when the function expression may not be a
+procedure.  CHECK-lambda is generated for lambda expressions that may
+be called with the wrong number of arguments.  CHECK-field is
+generated for field operations whose record argument may not possess
+the required field.  Finally, CHECK-: is inserted for a failed type
+annotation.  CHECK-: is guaranteed to blow up if reached.
+
+
+
+7. Restrictions on Source Programs
+
+Names of the form CHECK-... and st:... should be avoided.
+
+The single argument forms of make-vector and make-list cannot be used
+as they have no sensible type.
+
+Not all forms of match patterns are handled.  The following patterns
+cannot be used: ..., ..k, not, or, get!, set!, quasi-patterns, and ?
+predicates where the predicate expression is not a primitive or a
+predicate built by define-structure.
+
+Define-structure with initial values is not handled.
+
+Extend-syntax and defmacro definitions are loaded (by eval) into
+Scheme and subsequently expanded.
+
+Forget datatype, it does not work yet.
+
+
+8. Caveats
+
+Code that relies on the order of evaluation of letrec expressions,
+or that does not order top-level definitions properly (in left-to-right
+order), may blow up.  I regard this as problem with Scheme, not soft
+typing.

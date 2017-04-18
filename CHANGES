@@ -1,0 +1,102 @@
+Changes from version 0.07:
+
+Swapped the order of import,export variables in import expressions.
+Added ".softschemerc".
+Simplified installation procedure.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Changes from version 0.06:
+
+Using a less aggressive version of pseudo-subtype that does not display
+exponential behavior.
+
+Display hidden type names with .N.
+
+Fixed parse to expand case and do expressions.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Changes from version 0.05:
+
+"let" renamed to "rec" in types.
+
+added st:verbose
+
+define-structure with initializers is rejected, it was never done right anyway.
+
+st:check takes #f as an output name to suppress generation of an output file.
+
+Chez specific primitives are no longer automatically defined.
+
+define-primitive added.
+
+Promises (delay and force) now have type promise, and are not macro expanded.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Changes from version 0.04:
+
+Fixed an important bug (in pseudo-subtype) that could lead to the
+unsafe omission of a run-time check.
+
+Renamed DEFINTE to ERROR.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Changes from version 0.03:
+
+The user interface is completely changed.  See the README.
+
+A new command (st:cause) prints causes of a check.  (st:type n) displays
+the type of CHECK n.  DEFINITE CHECKs are displayed somewhat differently.
+
+Quoted data is typed more precisely with cons types, rather than
+lists.  Also cons is a pure constructor if neither set-car! nor
+set-cdr! are used.  Applications of list like (list a b c) are changed
+to (cons a (cons b (cons c ()))) to get better typing.
+
+Redefinition of global names and primitives is now permitted for
+defines.  All but the first occurrence of a define is changed to a
+set!. Names introduced by define-structure must still be uniquely
+defined.
+
+Unreferenced shared structure in types is not printed.
+
+list-ref and list-tail always show as CHECKs, because their implementation
+requires checks.
+
+The convention for printing type variables has changed.  Polymorphic
+type variables are now printed as Xn.  Recursive variables are printed
+as Yn.  Non-polymorphic variables print as Zn.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Changes from version 0.02:
+
+Match typing is improved.  No additional [x (match:error x)] clause is
+added in the output.  Instead, matches that may fail are indicated by
+CHECK-match or CHECK-match* in the output.  CHECK-match* indicates an
+inexhaustive match.  A match is inexhaustive if the type system cannot
+precisely represent its possible input (inexhaustive-ness is a local
+syntactic property of each match expression).  For example, the
+expression (match x [1 ...]) is inexhaustive because the type system
+must use the approximate type "number" for its input.  An ordinary
+match check indicates that the type of the input value is larger than
+the type assigned by the system to the match expression, even if this
+type is not precise.  Hence (match #t [1 ...]) gets an ordinary match
+check.
+
+The pattern "else" is now recognized as semantically equivalent to _.
+However, unlike _ or a pattern variable, "else" does not widen the
+allowed input type of the match.  Hence the function:
+  (match-lambda [() #t][else (error #f "not nil")])
+has type (nil -> true), while the function:
+  (match-lambda [() #t][_ (error #f "not nil")])
+has type ((+ nil Z1) -> true)).
+
+This version supports static type annotations with syntax (: type expr).
+If the expression does not satisfy the type constraint, a CHECK-:
+is inserted.  If such a check is ever reached, it is guaranteed to blow
+up.  See also the macros "module:" and "define:" in "basiclib.ss".
+
+The old "basiclib.ss" has been split into "basiclib.ss" and "checklib.ss".
+
+Type declarations (define-structure) are now properly scoped.
+
+"library.ss" is a library of useful, nicely typed functions.

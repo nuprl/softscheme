@@ -1,0 +1,34 @@
+
+I am pleased to announce the first public release of Soft Scheme, a
+practical *soft* type system for R4RS Scheme.  Also available is Rice
+technical report TR93-218 titled "A practical soft type system for
+Scheme" by Andrew K. Wright and Robert Cartwright.
+
+Soft Scheme provides the benefits of static typing for dynamically
+typed Scheme.  Like a static type checker, a soft type checker infers
+types for variables and expressions.  But rather than reject programs
+containing untypable fragments, a soft type checker inserts explicit
+run-time checks to transform untypable programs to typable form.
+These run-time checks indicate potential program errors, enabling
+programmers to detect errors prior to program execution.  Soft type
+checking minimizes the number of run-time checks in the compiled code,
+enabling dynamically typed languages to attain the efficiency of
+statically typed languages like ML.
+
+Soft Scheme is available by anonymous FTP from titan.cs.rice.edu
+(128.42.1.30) in file "public/wright/softscheme.tar.Z".  Be sure to
+set type binary when transferring this compressed file.  This package
+includes the above-mentioned technical report.  The tech report is
+also available separately in "public/languages/tr93-218.[dvi,ps].Z".
+Soft Scheme relies on my pattern matching extensions to scheme, which
+are available in file "public/wright/match.tar.Z".  Obtain both
+"softscheme.tar.Z" and "match.tar.Z" if you are interested in running
+the system, otherwise just get "tr93-218.[dvi.ps].Z".
+
+Soft Scheme has been tested with Chez Scheme and SCM.  It should port
+easily to other Scheme systems with SLIB.  But note that this program
+requires a reasonably high performance Scheme system.
+
+Questions and comments welcome!
+
+Andrew Wright
